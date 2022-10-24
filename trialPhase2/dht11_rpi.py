@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
 
-DHTPin = 11 #define the pin of DHT11 - physical pin, not GPIO pin
+DHTPin = 7 #define the pin of DHT11 - physical pin, not GPIO pin gpio4
 
 def loop():
     dht = DHT.DHT(DHTPin) #create a DHT class object

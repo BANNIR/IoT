@@ -5,10 +5,12 @@ import dash_bootstrap_components as dbc
 import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
+import mail_client.py as email
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 GPIO.setup(40, GPIO.OUT)
+email_sent = False;
 
 DHTPin = 11 #define the pin of DHT11 - physical pin, not GPIO pin
 dht = DHT.DHT(DHTPin) #create a DHT class object
@@ -58,7 +60,7 @@ app.layout = html.Div(children=[
             })]))        
         ]),
  
-    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
+    dcc.Interval(id='interval-component', interval=1*5000, n_intervals=0)
 ],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
 
 
@@ -86,6 +88,11 @@ def update_sensor(n):
     dht.readDHT11()
     temperatureValue = dht.temperature
     humidityValue = dht.humidity
+    if temperatureValue > 24 and email_sent == False:
+        subject = "Temperature too High"
+        body = "The current temperature is" + temperatureValue + ". Would you like to turn on the fan?"
+        email.send_mail(subject, body)
+        email_sent = True
     return humidityValue, temperatureValue
 
 main()
