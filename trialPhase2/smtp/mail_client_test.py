@@ -41,14 +41,7 @@ def get_mails():
     service = build('gmail', 'v1', credentials=creds)
 
     messages = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
-    for message in messages['messages']:
-        msg = service.users().messages().get(userId='me', id=message['id']).execute()
-        msg_headers = msg['payload']['headers']
-        msg_from = filter(lambda hdr: hdr['name'] == 'From', msg_headers)
-        msg_from = list(msg_from)[0]
-        # print('From: ' + msg_from['value'])
-        # print('> ' + msg['snippet'])
-        # print('-----------------------')
+    return messages
 
 # if __name__ == '__main__':
 #     print('Should testbed send or read emails?')
