@@ -63,11 +63,7 @@ app.layout = html.Div(children=[
             daq.ToggleSwitch(
             id='motor',
             label=['Fan On', 'Fan Off'],
-<<<<<<< HEAD
             value='',
-=======
-            value=motorOn,
->>>>>>> 884aae7a0dbafa281b1189a2298ee877e1110e97
             #if temperatureValue >= 24:
             #    GPIO.output(Motor1,GPIO.HIGH)
             #    GPIO.output(Motor2,GPIO.LOW)
@@ -87,13 +83,8 @@ app.layout = html.Div(children=[
             )])) 
         ]),
  
-<<<<<<< HEAD
     dcc.Interval(id='interval-component', interval=1*5000, n_intervals=0)
 ],  style={'backgroundColor':'#727174', 'padding-top': '2%'})
-=======
-    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
-],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
->>>>>>> 884aae7a0dbafa281b1189a2298ee877e1110e97
 
 
 @app.callback(Output('led-image', 'children'),
