@@ -1,46 +1,64 @@
-import yagmail
-from yagmail.oauth2 import refresh_authorization
+import base64
+from email.message import EmailMessage
 
+
+import os.path
+import google.auth
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 
-          'https://www.googleapis.com/auth/gmail.modify']
-access_token = ''
-expires_in = 0
-refresh_token = ''
-user_email = 'elemtestbed@gmail.com'
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
+serv_email = 'elemtestbed@gmail.com'
 
 # mail setup
-yag = yagmail.SMTP(user_email, oauth2_file='oauth.json')
-inf = {
-    "google_client_id": yag.credentials['google_client_id'],
-    "google_client_secret": yag.credentials['google_client_secret'],
-    "google_refresh_token": yag.credentials['google_refresh_token']
-}
-access_token, expires_in = refresh_authorization(**inf)
-refresh_token = yag.credentials['google_refresh_token']
-oauth_token = yag.get_oauth_string(yag.user, inf)
+creds = None
+if os.path.exists('token.json'):
+    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+# If there are no (valid) credentials available, let the user log in.
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'client_secret.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+    # Save the credentials for the next run
+    with open('token.json', 'w') as token:
+        token.write(creds.to_json())
+
+service = build('gmail', 'v1', credentials=creds)
+
 
 def send_mail(subject, body, to = 'elemtestbed@gmail.com'):
-    yag.send(to=to, subject=subject, contents=body)
+    service = build('gmail', 'v1', credentials=creds)
+    try:
+        message = EmailMessage()
+
+        message.set_content(body)
+
+        message['To'] = to
+        message['From'] = serv_email
+        message['Subject'] = subject
+
+        raw_string = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        fMessage = (service.users().messages().send(userId='me', body={'raw': raw_string}).execute())
+    except HttpError as error:
+        print('An error occurred: %s' % error)
+        fMessage = None
+    return fMessage
+
     
 def get_mails():
-
-    token = {
-        "access_token": access_token,
-        "expires_in": expires_in,
-        "refresh_token": refresh_token,
-        "scope": "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify",
-        "client_id": yag.credentials['google_client_id'],
-        "client_secret": yag.credentials['google_client_secret'],
-        "token_type": "Bearer"
-    }
-
-    creds = Credentials.from_authorized_user_info(token)
     service = build('gmail', 'v1', credentials=creds)
-
-    messages = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    try:
+        messages = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    except HttpError as error:
+        print('An error occurred: %s' % error)
+        messages = None
     return messages
 
 # if __name__ == '__main__':
@@ -55,4 +73,5 @@ def get_mails():
 #         send_mail(subject, body)
 #     elif choice == '2':
 #         print('Reading emails from the testbed')
-#         get_mails()
+#         messages = get_mails()
+#         print(messages)

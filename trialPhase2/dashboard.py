@@ -5,12 +5,12 @@ import dash_bootstrap_components as dbc
 import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
-import mail_client.py as email
+import mail_client as email
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 GPIO.setup(40, GPIO.OUT)
-email_sent = False;
+email_sent = False
 
 DHTPin = 11 #define the pin of DHT11 - physical pin, not GPIO pin
 dht = DHT.DHT(DHTPin) #create a DHT class object
