@@ -11,6 +11,7 @@
 # GPIO.setup(Motor2,GPIO.OUT)
 # GPIO.setup(Motor3,GPIO.OUT)
 
+<<<<<<< HEAD
 # def start():
 #     while (True):
 #         GPIO.output(Motor1,GPIO.HIGH)
@@ -24,6 +25,21 @@
 #     GPIO.output(Motor2,GPIO.LOW)
 #     GPIO.output(Motor3,GPIO.LOW)
 #     GPIO.cleanup()
+=======
+def start():
+    while (True):
+        GPIO.output(Motor1,GPIO.HIGH)
+        GPIO.output(Motor2,GPIO.LOW)
+        GPIO.output(Motor3,GPIO.HIGH)
+        sleep(10)
+        GPIO.cleanup()
+        
+def stop():
+    GPIO.output(Motor1,GPIO.LOW)
+    GPIO.output(Motor2,GPIO.LOW)
+    GPIO.output(Motor3,GPIO.LOW)
+    GPIO.cleanup()
+>>>>>>> 884aae7a0dbafa281b1189a2298ee877e1110e97
 
 
 #GPIO.output(Motor1,GPIO.HIGH)
