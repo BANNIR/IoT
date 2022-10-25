@@ -6,25 +6,26 @@ import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
 import mail_client as email
+import motor as motor
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 GPIO.setup(40, GPIO.OUT)
 email_sent = False
 
-DHTPin = 11 #define the pin of DHT11 - physical pin, not GPIO pin
+DHTPin = 15 #define the pin of DHT11 - physical pin, not GPIO pin
 dht = DHT.DHT(DHTPin) #create a DHT class object
 
 app = Dash(__name__)
-img = html.Img(src=app.get_asset_url('lightOffp.png'),width='100px', height='100px')
+img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
 humidityValue = 0
 temperatureValue = 0
 
 
 app.layout = html.Div(children=[
-    html.H1(children='IoT Dashboard', style={'text-align': 'center', 'margin-left': '2%', 'margin-bottom': '5%'}),
-    html.Div( id='led-box', style={'margin-left': '2%', 'margin-top': '5%', 'margin-bottom': '5%'},children=[
-        html.H1(children='LED Control'),
+    html.H1(children='Dashboard', style={'text-align': 'center', 'margin-left': '6%', 'margin-bottom': '5%'}),
+    html.Div( id='led-box', style={'margin-left': '6%', 'margin-top': '5%', 'margin-bottom': '5%'},children=[
+        html.H1(children='LED Controller'),
         html.Button(img, id='led-image', n_clicks = 0),
     ]),
 
@@ -57,11 +58,33 @@ app.layout = html.Div(children=[
             style={
                 'margin-top': '5%',
                 'margin-bottom': '5%'
-            })]))        
+            })])),  
+        dbc.Col(html.Div(id='dc-motor', children=[
+            daq.ToggleSwitch(
+            id='motor',
+            label=['Fan On', 'Fan Off'],
+            value='',
+            #if temperatureValue >= 24:
+            #    GPIO.output(Motor1,GPIO.HIGH)
+            #    GPIO.output(Motor2,GPIO.LOW)
+            #    GPIO.output(Motor3,GPIO.HIGH)
+            #    value=False
+            #elif temperatureValue < 24:
+            #    sleep(5)
+            #    GPIO.output(Motor1,GPIO.LOW)
+            #    GPIO.cleanup()
+            #    value=motorOn
+            style={
+                'margin-top': '5%',
+                'margin-bottom': '5%'
+            }
+            
+            
+            )])) 
         ]),
  
     dcc.Interval(id='interval-component', interval=1*5000, n_intervals=0)
-],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
+],  style={'backgroundColor':'#727174', 'padding-top': '2%'})
 
 
 @app.callback(Output('led-image', 'children'),
@@ -70,11 +93,11 @@ app.layout = html.Div(children=[
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
         GPIO.output(40, GPIO.HIGH)
-        img = html.Img(src=app.get_asset_url('lightOnp.png'), width='100px', height='100px')
+        img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
         return img
     else:
         GPIO.output(40, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightOnp.png'),width='100px', height='100px')
+        img = html.Img(src=app.get_asset_url('lightOnp'),width='100px', height='100px')
         return img
     
 def main():
@@ -88,11 +111,23 @@ def update_sensor(n):
     dht.readDHT11()
     temperatureValue = dht.temperature
     humidityValue = dht.humidity
+    #checking for the temp and sending an email / turning on a motor
     if temperatureValue > 24 and email_sent == False:
         subject = "Temperature too High"
         body = "The current temperature is" + temperatureValue + ". Would you like to turn on the fan?"
         email.send_mail(subject, body)
         email_sent = True
+    else:
+        email_id = email.get_mails(1)
+        reply = email.get_mail(email_id)
+        reply = reply.lower()
+        if (reply.__contains__("yes")):
+            motor.start()
+            
+    #turning the motor off when the temperature is lower than 24
+#    if temperatureValue < 24:
+#        motor.stop()
+#        email_sent = False
     return humidityValue, temperatureValue
 
 main()
