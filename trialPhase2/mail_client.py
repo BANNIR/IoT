@@ -52,14 +52,23 @@ def send_mail(subject, body, to = 'elemtestbed@gmail.com'):
     return fMessage
 
     
-def get_mails():
+def get_mails(maxResults = 100):
     service = build('gmail', 'v1', credentials=creds)
     try:
-        messages = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+        messages = service.users().messages().list(userId='me', labelIds=['INBOX'], maxResults=maxResults).execute()
     except HttpError as error:
         print('An error occurred: %s' % error)
         messages = None
     return messages
+
+def get_mail(mailId):
+    service = build('gmail', 'v1', credentials=creds)
+    try:
+        message = service.users().messages().get(userId='me', id=mailId).execute()
+    except HttpError as error:
+        print('An error occurred: %s' % error)
+        message = None
+    return message
 
 # if __name__ == '__main__':
 #     print('Should testbed send or read emails?')
