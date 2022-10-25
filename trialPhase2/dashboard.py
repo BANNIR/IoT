@@ -6,6 +6,7 @@ import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
 import mail_client as email
+import motor as motor
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
@@ -57,10 +58,32 @@ app.layout = html.Div(children=[
             style={
                 'margin-top': '5%',
                 'margin-bottom': '5%'
-            })]))        
+            })])),  
+        dbc.Col(html.Div(id='dc-motor', children=[
+            daq.ToggleSwitch(
+            id='motor',
+            label=['Fan On', 'Fan Off'],
+            value=motorOn,
+            #if temperatureValue >= 24:
+            #    GPIO.output(Motor1,GPIO.HIGH)
+            #    GPIO.output(Motor2,GPIO.LOW)
+            #    GPIO.output(Motor3,GPIO.HIGH)
+            #    value=False
+            #elif temperatureValue < 24:
+            #    sleep(5)
+            #    GPIO.output(Motor1,GPIO.LOW)
+            #    GPIO.cleanup()
+            #    value=motorOn
+            style={
+                'margin-top': '5%',
+                'margin-bottom': '5%'
+            }
+            
+            
+            )])) 
         ]),
  
-    dcc.Interval(id='interval-component', interval=1*5000, n_intervals=0)
+    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
 ],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
 
 
@@ -88,11 +111,23 @@ def update_sensor(n):
     dht.readDHT11()
     temperatureValue = dht.temperature
     humidityValue = dht.humidity
+    #checking for the temp and sending an email / turning on a motor
     if temperatureValue > 24 and email_sent == False:
         subject = "Temperature too High"
         body = "The current temperature is" + temperatureValue + ". Would you like to turn on the fan?"
         email.send_mail(subject, body)
         email_sent = True
+    else:
+        email_id = email.get_mails(1)
+        reply = email.get_mail(email_id)
+        reply = reply.lower()
+        if (reply.__contains__("yes")):
+            motor.start()
+            
+    #turning the motor off when the temperature is lower than 24
+#    if temperatureValue < 24:
+#        motor.stop()
+#        email_sent = False
     return humidityValue, temperatureValue
 
 main()
