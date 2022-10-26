@@ -121,7 +121,7 @@ def update_sensor(n):
         email_sent = True
     else:
         email_id = email.get_mail_ids(1)
-        reply = email.get_mail(email_id).snippet
+        reply = email.get_mail(email_id[0])['snippet']
         reply = reply.lower()
         if (reply.__contains__("yes")):
             GPIO.output(LED, GPIO.HIGH)
