@@ -6,11 +6,13 @@ import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
 import mail_client as email
-import motor as motor
+#import motor as motor
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 GPIO.setup(40, GPIO.OUT)
+LED=36
+GPIO.setup(LED, GPIO.OUT)
 email_sent = False
 
 DHTPin = 15 #define the pin of DHT11 - physical pin, not GPIO pin
@@ -122,7 +124,10 @@ def update_sensor(n):
         reply = email.get_mail(email_id)
         reply = reply.lower()
         if (reply.__contains__("yes")):
-            motor.start()
+            GPIO.output(LED, GPIO.HIGH)
+            sleep(5)
+            GPIO.setup(40, GPIO.LOW)
+            #motor.start()
             
     #turning the motor off when the temperature is lower than 24
 #    if temperatureValue < 24:
