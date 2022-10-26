@@ -8,20 +8,32 @@ import Freenove_DHT as DHT
 import mail_client as email
 #import motor as motor
 
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
-GPIO.setup(40, GPIO.OUT)
-LED=36
-GPIO.setup(LED, GPIO.OUT)
-email_sent = False
+GPIO.setup(21, GPIO.OUT)
+EMAIL_SEND = False
 
-DHTPin = 15 #define the pin of DHT11 - physical pin, not GPIO pin
+DHTPin = 17 
 dht = DHT.DHT(DHTPin) #create a DHT class object
 
 app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
 humidityValue = 0
 temperatureValue = 0
+
+Motor1 = 27
+Motor2 = 18
+Motor3 = 22
+GPIO.setup(Motor1,GPIO.OUT)
+GPIO.setup(Motor2,GPIO.OUT)
+GPIO.setup(Motor3,GPIO.OUT)
+
+def startMotor():
+    GPIO.output(Motor1,GPIO.HIGH)
+    GPIO.output(Motor2,GPIO.LOW)
+    GPIO.output(Motor3,GPIO.HIGH)
+    time.sleep(10)
+    GPIO.output(Motor1, GPIO.LOW)
 
 
 app.layout = html.Div(children=[
@@ -94,12 +106,12 @@ app.layout = html.Div(children=[
               )
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
-        GPIO.output(40, GPIO.HIGH)
+        GPIO.output(21, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
         return img
     else:
-        GPIO.output(40, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightOnp'),width='100px', height='100px')
+        GPIO.output(21, GPIO.LOW)
+        img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
         return img
     
 def main():
@@ -109,31 +121,32 @@ def main():
 @app.callback(Output('humidity-gauge', 'value'),
               Output('temperature-thermometer', 'value'),
               Input('interval-component', 'n_intervals'))
+    
 def update_sensor(n):
+    global EMAIL_SEND
     dht.readDHT11()
     temperatureValue = dht.temperature
     humidityValue = dht.humidity
     #checking for the temp and sending an email / turning on a motor
-    if temperatureValue > 24 and email_sent == False:
+    if temperatureValue > 20 and EMAIL_SEND == False:
         subject = "Temperature too High"
-        body = "The current temperature is" + temperatureValue + ". Would you like to turn on the fan?"
+        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
         email.send_mail(subject, body)
-        email_sent = True
+        EMAIL_SEND = True
     else:
         email_id = email.get_mail_ids(1)
         reply = email.get_mail(email_id[0])['snippet']
         reply = reply.lower()
         if (reply.__contains__("yes")):
-            GPIO.output(LED, GPIO.HIGH)
-            sleep(5)
-            GPIO.setup(40, GPIO.LOW)
-            #motor.start()
+            startMotor()
+            
+    return humidityValue, temperatureValue
             
     #turning the motor off when the temperature is lower than 24
 #    if temperatureValue < 24:
 #        motor.stop()
 #        email_sent = False
-    return humidityValue, temperatureValue
+    
 
 main()
 

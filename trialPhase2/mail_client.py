@@ -78,7 +78,7 @@ def get_mail(mailId):
         message = None
     return message
 
-# if __name__ == '__main__':
+#if __name__ == '__main__':
 #     print('Should testbed send or read emails?')
 #     print('1. Send')
 #     print('2. Read')
@@ -90,5 +90,7 @@ def get_mail(mailId):
 #         send_mail(subject, body)
 #     elif choice == '2':
 #         print('Reading emails from the testbed')
-#         messages = get_mails()
-#         print(messages)
+#         email_id = get_mail_ids(1)
+#         reply = get_mail(email_id[0])['snippet']
+#         reply = reply.lower()
+#         print(reply)

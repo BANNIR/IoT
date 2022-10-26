@@ -1,9 +1,9 @@
-# import RPi.GPIO as GPIO
-# from time import sleep
+import RPi.GPIO as GPIO
+from time import sleep
 
-# GPIO.setmode(GPIO.BOARD)
-# GPIO.setwarnings(False)
-# Motor1 = 27 # Input Pin
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setwarnings(False)
+#Motor1 = 27 # Input Pin
 # Motor2 = 17 # Input Pin
 # Motor3 = 22 # Enable Pin
 
