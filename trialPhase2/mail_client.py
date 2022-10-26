@@ -61,6 +61,14 @@ def get_mails(maxResults = 100):
         messages = None
     return messages
 
+def get_mail_ids(maxResults = 100):
+    messages = get_mails(maxResults)
+    if messages is not None:
+        mailIds = [message['id'] for message in messages['messages']]
+    else:
+        mailIds = None
+    return mailIds
+
 def get_mail(mailId):
     service = build('gmail', 'v1', credentials=creds)
     try:
