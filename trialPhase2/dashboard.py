@@ -135,8 +135,10 @@ def update_sensor(n):
         EMAIL_SEND = True
     else:
         email_id = email.get_mail_ids(1)
-        reply = email.get_mail(email_id[0])['snippet']
+        reply = email.read_mail_body(email_id[0])
         reply = reply.lower()
+        # todo: read mail timestamp to prevent re-using old "yes" replies
+        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
         if (reply.__contains__("yes")):
             startMotor()
             

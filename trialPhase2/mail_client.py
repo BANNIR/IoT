@@ -1,7 +1,6 @@
 import base64
 from email.message import EmailMessage
 
-
 import os.path
 import google.auth
 from google.auth.transport.requests import Request
@@ -78,7 +77,31 @@ def get_mail(mailId):
         message = None
     return message
 
-#if __name__ == '__main__':
+def read_mail_body(mailId):
+    message = get_mail(mailId)
+    if message is not None:
+        body = message['snippet']
+    else:
+        body = None
+    return body
+
+def read_mail_subject(mailId):
+    message = get_mail(mailId)
+    if message is not None:
+        subject = message['payload']['headers'][0]['value']
+    else:
+        subject = None
+    return subject
+
+def read_mail_timestamp(mailId):
+    message = get_mail(mailId)
+    if message is not None:
+        timestamp = message['internalDate']
+    else:
+        timestamp = None
+    return timestamp
+
+# if __name__ == '__main__':
 #     print('Should testbed send or read emails?')
 #     print('1. Send')
 #     print('2. Read')
@@ -89,8 +112,11 @@ def get_mail(mailId):
 #         body = input('Enter body: ')
 #         send_mail(subject, body)
 #     elif choice == '2':
-#         print('Reading emails from the testbed')
+#         print('Reading latest email from the testbed')
 #         email_id = get_mail_ids(1)
-#         reply = get_mail(email_id[0])['snippet']
+#         reply = read_mail_body(email_id[0])
+#         date = read_mail_timestamp(email_id[0])
 #         reply = reply.lower()
+#         print("Info of latest email:")
 #         print(reply)
+#         print(date)
