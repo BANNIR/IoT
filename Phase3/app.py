@@ -8,7 +8,7 @@ import time
 import Freenove_DHT as DHT
 import mail_client as email
 from datetime import datetime
-import pytz#import motor as motor
+#import motor as motor
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -111,7 +111,19 @@ app.layout = html.Div(children=[
     dcc.Interval(id='interval-component', interval=1*5000, n_intervals=0)
 ],  style={'backgroundColor':'#727174', 'padding-top': '2%'})
 
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'}),
+        # dbc.NavItem(dbc.NavLink("Settings", href="#")),
+        dbc.NavItem(dbc.NavLink(offcanvas))
 
+    ],
+    brand="SMARTHOME",
+    brand_href="#",
+    color="dark",
+    dark=True,
+    sticky='top'
+)
 @app.callback(Output('led-image', 'children'),
               Input('led-image', 'n_clicks')
               )
