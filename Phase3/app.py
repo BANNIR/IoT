@@ -118,7 +118,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink(offcanvas))
 
     ],
-    brand="SMARTHOME",
+    brand="HOME",
     brand_href="#",
     color="dark",
     dark=True,
@@ -129,11 +129,11 @@ navbar = dbc.NavbarSimple(
               )
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
-        GPIO.output(21, GPIO.HIGH)
+        GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
         return img
     else:
-        GPIO.output(21, GPIO.LOW)
+        GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
         return img
     
