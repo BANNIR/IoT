@@ -24,7 +24,7 @@ GPIO.setup(intensityPin, GPIO.OUT)
 # This works as long as the arduino code is running (change broker)
 broker = '192.168.1.11'
 port = 1883
-topic = "/IoTlab/status"
+topic = "/IoTlab/Server"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 app = Dash(__name__)
