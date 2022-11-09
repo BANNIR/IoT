@@ -8,7 +8,16 @@ import time
 import Freenove_DHT as DHT
 import mail_client as email
 from datetime import datetime
+import random
+from paho.mqtt import client as mqtt_client
 
+broker = '10.0.0.242'
+port = 1883
+topic = "IoTlab/light"
+# generate client ID with pub prefix randomly
+client_id = f'python-mqtt-{random.randint(0, 100)}'
+
+message ="0"
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -104,7 +113,9 @@ navbar = dbc.NavbarSimple(
 )
 ledBoxTab = html.Div(id='led-box', className='ledBox',children=[
                 html.H1(children='LED'),
-                html.Button(img, id='led-image', n_clicks = 0),
+                html.Div(img, id='led-image', n_clicks = 0),
+                dcc.Interval(id='mqtt', interval=1*1500, n_intervals=0),
+
         ])
 
 humidTempTab = html.Div(className='grid-container', children=[
@@ -181,10 +192,12 @@ app.layout = html.Div(id="theme-switch-div", children=[
 
 
 @app.callback(Output('led-image', 'children'),
-              Input('led-image', 'n_clicks')
+              Input('mqtt', 'n_intervals')
                 )
-def update_output(n_clicks):
-    if n_clicks % 2 == 1:
+def update_output(n):
+    sensorValue = float(message)
+
+    if sensorValue <= 400.0:
         GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
         return img
@@ -207,31 +220,31 @@ def toggle_fan(value):
     return value
 
 
-@app.callback(Output('humidity-gauge', 'value'),
-              Output('temperature-thermometer', 'value'),
-              Input('interval-component', 'n_intervals'))
+# @app.callback(Output('humidity-gauge', 'value'),
+#               Output('temperature-thermometer', 'value'),
+#               Input('interval-component', 'n_intervals'))
 
-def update_sensor(n):
-    global EMAIL_SEND
-    dht.readDHT11()
-    temperatureValue = dht.temperature
-    humidityValue = dht.humidity
-    #checking for the temp and sending an email / turning on a motor
-    if temperatureValue > 20 and EMAIL_SEND == False:
-        subject = "Temperature too High"
-        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
-        email.send_mail(subject, body)
-        EMAIL_SEND = True
-    else:
-        email_id = email.get_mail_ids(1)
-        reply = email.read_mail_body(email_id[0])
-        reply = reply.lower()
-        # todo: read mail timestamp to prevent re-using old "yes" replies
-        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-        if (reply.__contains__("yes")):
-            startMotor()
+# def update_sensor(n):
+#     global EMAIL_SEND
+#     dht.readDHT11()
+#     temperatureValue = dht.temperature
+#     humidityValue = dht.humidity
+#     #checking for the temp and sending an email / turning on a motor
+#     if temperatureValue > 20 and EMAIL_SEND == False:
+#         subject = "Temperature too High"
+#         body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
+#         email.send_mail(subject, body)
+#         EMAIL_SEND = True
+#     else:
+#         email_id = email.get_mail_ids(1)
+#         reply = email.read_mail_body(email_id[0])
+#         reply = reply.lower()
+#         # todo: read mail timestamp to prevent re-using old "yes" replies
+#         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
+#         if (reply.__contains__("yes")):
+#             startMotor()
             
-    return humidityValue, temperatureValue
+#     return humidityValue, temperatureValue
  
 
 #Phase 3 code
@@ -245,10 +258,41 @@ def toggle_offcanvas(n1, is_open):
     return is_open
 
 
+#mqtt sub communication
+def connect_mqtt() -> mqtt_client:
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect, return code %d\n", rc)
+
+    client = mqtt_client.Client(client_id)
+    #client.username_pw_set(username, password)
+    client.on_connect = on_connect
+    client.connect(broker, port)
+    return client
 
 
+def subscribe(client: mqtt_client):
+    def on_message(client, userdata, msg):
+        global message 
+        message = msg.payload.decode()
+        #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-def main():
+    client.subscribe(topic)
+    client.on_message = on_message
+
+
+def run():
+    print("attempting to connect")
+    client = connect_mqtt()
+    print("attempting to subscribe")
+    subscribe(client)
+    client.loop_start()
+
+
+if __name__ == "__main__":
+    run()
     app.run_server(debug=True, host='localhost', port=8060)
-   
-main()
+    
+
