@@ -324,6 +324,10 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic)
     client.on_message = on_message
 
+@app.callback(Output('light-intensity-value', 'value'),
+              Input('interval-component', 'n_intervals'))
+def update_light_intensity(n):
+    return 'The current light intensity is:' + str(current_light_intensity)
 
 def run():
     print("attempting to connect")
