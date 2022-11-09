@@ -11,7 +11,11 @@ from datetime import datetime
 import random
 from paho.mqtt import client as mqtt_client
 
-broker = '10.0.0.242'
+lastSentTime = datetime.now()
+lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
+isSendEligible = True
+
+broker = '192.168.0.119'
 port = 1883
 topic = "IoTlab/light"
 # generate client ID with pub prefix randomly
@@ -113,7 +117,19 @@ navbar = dbc.NavbarSimple(
 )
 ledBoxTab = html.Div(id='led-box', className='ledBox',children=[
                 html.H1(children='LED'),
+                html.P("Light Intensity"),
+                html.P("Light Intensity: ", id="light_intensity"),
                 html.Div(img, id='led-image', n_clicks = 0),
+                dbc.Toast(
+                    "An email has been sent!",
+                    id="notofication",
+                    header="LED WARNING",
+                    is_open=False,
+                    dismissable=True,
+                    icon="danger",
+                    # top: 66 positions the toast below the navbar
+                    style={"position": "fixed", "top": 75, "right": 10, "width": 350},
+                ),
                 dcc.Interval(id='mqtt', interval=1*1500, n_intervals=0),
 
         ])
@@ -192,19 +208,34 @@ app.layout = html.Div(id="theme-switch-div", children=[
 
 
 @app.callback(Output('led-image', 'children'),
+              Output('notofication', 'is_open'),
+              Output('light_intensity', 'children'),
               Input('mqtt', 'n_intervals')
                 )
 def update_output(n):
+    global lastSentTime 
+    global isSendEligible
+
     sensorValue = float(message)
 
     if sensorValue <= 400.0:
         GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
-        return img
+
+        date = datetime.now()
+#        if isSendEligible:
+        subject="LED Warning!"
+        body=f"The Light is ON at {date}"
+        email.send_mail(subject, body)
+        lastSentTime = date
+        isSendEligible = True
+        show =  True
     else:
         GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
-        return img
+        show = False
+        isSendEligible = False
+    return img, show, message
     
 
 @app.callback(Output('fan-toggle', 'value'),
@@ -220,31 +251,34 @@ def toggle_fan(value):
     return value
 
 
-# @app.callback(Output('humidity-gauge', 'value'),
-#               Output('temperature-thermometer', 'value'),
-#               Input('interval-component', 'n_intervals'))
+@app.callback(Output('humidity-gauge', 'value'),
+              Output('temperature-thermometer', 'value'),
+              Input('interval-component', 'n_intervals'))
 
-# def update_sensor(n):
-#     global EMAIL_SEND
-#     dht.readDHT11()
-#     temperatureValue = dht.temperature
-#     humidityValue = dht.humidity
-#     #checking for the temp and sending an email / turning on a motor
-#     if temperatureValue > 20 and EMAIL_SEND == False:
-#         subject = "Temperature too High"
-#         body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
-#         email.send_mail(subject, body)
-#         EMAIL_SEND = True
-#     else:
-#         email_id = email.get_mail_ids(1)
-#         reply = email.read_mail_body(email_id[0])
-#         reply = reply.lower()
-#         # todo: read mail timestamp to prevent re-using old "yes" replies
-#         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-#         if (reply.__contains__("yes")):
-#             startMotor()
+def update_sensor(n):
+    global EMAIL_SEND
+    
+    global lastReadTime 
+    dht.readDHT11()
+    temperatureValue = dht.temperature
+    humidityValue = dht.humidity
+    #checking for the temp and sending an email / turning on a motor
+    if temperatureValue > 20 and EMAIL_SEND == False:
+        subject = "Temperature too High"
+        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
+        email.send_mail(subject, body)
+        EMAIL_SEND = True
+    else:
+        email_id = email.get_mail_ids(1)
+        reply = email.read_mail_body(email_id[0])
+        reply = reply.lower()
+        # todo: read mail timestamp to prevent re-using old "yes" replies
+        mail_time = email.read_mail_timestamp(email_id[0])
+        if (mail_time >= lastReadTime and reply.__contains__("yes")):
+            lastReadTime = mail_time
+            startMotor()
             
-#     return humidityValue, temperatureValue
+    return humidityValue, temperatureValue
  
 
 #Phase 3 code
@@ -294,5 +328,7 @@ def run():
 if __name__ == "__main__":
     run()
     app.run_server(debug=True, host='localhost', port=8060)
+    
+    
     
 
