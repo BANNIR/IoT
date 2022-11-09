@@ -46,13 +46,15 @@ def startMotor():
 #Phase3 pin
 intensityPin = 13 #33 in GPIO.BOARD
 GPIO.setup(intensityPin, GPIO.OUT)
-
+global current_light_intensity
+currentLightIntensity = "NaN"
+global lightIntensity
 
 app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
 humidityValue = 0
 temperatureValue = 0
-
+tempUnit = 'Celsius'
 theme_change = ThemeChangerAIO(aio_id="theme")
 
 offcanvas = html.Div(
@@ -111,12 +113,33 @@ navbar = dbc.NavbarSimple(
     
     
 )
-ledBoxTab = html.Div(id='led-box', className='ledBox',children=[
+ledBoxTab = html.Div(id='led-box', className='grid-container',children=[
+    dbc.Row([
+            dbc.Col(html.Div(children=[
                 html.H1(children='LED'),
                 html.Div(img, id='led-image', n_clicks = 0),
                 dcc.Interval(id='mqtt', interval=1*1500, n_intervals=0),
-
+                html.P(children='Click the image to turn on the LED'),
+            ])),
+            dbc.Col(html.Div(children=[
+                html.H1(children='Current Light Intensity'),
+                html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
+                dbc.Input(
+                    size="lg",
+                    id='light-intensity-value',
+                    className="mb-3",
+                    value="The light intensity is " + str(currentLightIntensity), # + isItOn,
+                    readonly = True,
+                    style = {
+                        'text-align': 'center',
+                        'margin-top': '2%',
+                        'margin-right': '5%',
+                        'margin-left': '5%'
+                    }
+                )
+            ]))        
         ])
+])
 
 humidTempTab = html.Div(className='grid-container', children=[
                 dbc.Row([
@@ -138,8 +161,16 @@ humidTempTab = html.Div(className='grid-container', children=[
                         label='Current temperature',
                         value=temperatureValue,
                         showCurrentValue=True,
-                        min=0,
+                        min=-20,
                         max=100
+                        ),
+                        daq.ToggleSwitch(
+                        size=40,
+                        id='temp-toggle',
+                        value=False,
+                        label=['Celsius', 'Fahrenheit'],
+                        labelPosition='bottom',
+                        color = '#0C6E87',
                         )
                     ]))        
                 ])
@@ -220,9 +251,11 @@ def toggle_fan(value):
     return value
 
 
-# @app.callback(Output('humidity-gauge', 'value'),
-#               Output('temperature-thermometer', 'value'),
-#               Input('interval-component', 'n_intervals'))
+@app.callback(Output('humidity-gauge', 'value'),
+              Output('temperature-thermometer', 'value'),
+              Output('temperature-thermometer', 'units'),
+              Input('interval-component', 'n_intervals'),
+              Input('temp-toggle', 'value'))
 
 # def update_sensor(n):
 #     global EMAIL_SEND
@@ -243,6 +276,15 @@ def toggle_fan(value):
 #         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
 #         if (reply.__contains__("yes")):
 #             startMotor()
+
+#  # for toggle switch: C to F
+#     if tValue:
+#         tempUnit = 'Fahrenheit'
+#         temperatureValue = temperatureValue * (9/5) + 32
+#     elif not tValue:
+#         tempUnit = 'Celsius'
+
+#     return humidityValue, temperatureValue, tempUnit
             
 #     return humidityValue, temperatureValue
  
@@ -269,7 +311,7 @@ def connect_mqtt() -> mqtt_client:
     client = mqtt_client.Client(client_id)
     #client.username_pw_set(username, password)
     client.on_connect = on_connect
-    client.connect(broker, port)
+   # client.connect(broker, port)
     return client
 
 
@@ -285,14 +327,14 @@ def subscribe(client: mqtt_client):
 
 def run():
     print("attempting to connect")
-    client = connect_mqtt()
+   # client = connect_mqtt()
     print("attempting to subscribe")
     subscribe(client)
     client.loop_start()
 
 
 if __name__ == "__main__":
-    run()
+   # run()
     app.run_server(debug=True, host='localhost', port=8060)
     
 
