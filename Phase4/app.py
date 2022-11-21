@@ -16,8 +16,11 @@ import pytz
 import sqlite3
 from sqlite3 import Error
 
+lastSentTime = datetime.now()
+lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
+isSendEligible = True
 
-broker = '10.0.0.242'
+broker = '192.168.0.119'
 port = 1883
 topic = "IoTlab/light"
 # generate client ID with pub prefix randomly
@@ -59,7 +62,7 @@ currentLightIntensity = "NaN"
 global lightIntensity
 
 app = Dash(__name__)
-img = html.Img(src=app.get_asset_url('lightOffp'),width='40%', height='40%')
+img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
 humidityValue = 0
 temperatureValue = 0
 tempUnit = 'Celsius'
@@ -72,7 +75,7 @@ theme_change = ThemeChangerAIO(aio_id="theme");
 offcanvas = html.Div(
     [
         dbc.Button(
-              "Profile", id="open-offcanvas-backdrop",style={'padding': 10, 'border': 'none', 'background': 'none'}
+              "Profile", id="open-offcanvas-backdrop",style={'padding': '10%', 'border': 'none', 'background': 'none'}
         ),
         dbc.Offcanvas(
             html.Div(
@@ -130,7 +133,7 @@ cardLedBox = dbc.Card([
     dbc.CardBody([
         html.Button(img, id='led-image', n_clicks = 0, className = "btn btn-primary-outline"),
         html.P(children='Click the image to turn on the LED'),
-        dcc.Interval(id='mqtt', interval=1*1500, n_intervals=0),
+        dcc.Interval(id='mqtt', interval = 1 * 1500, n_intervals=0),
     ]), 
 ], color="dark", outline=True);
 
@@ -186,14 +189,14 @@ cardHumidTemp = dbc.Card([
                         max=122
                         ),
                         daq.ToggleSwitch(
-                        size=40,
+                        size = 50,
                         id='temp-toggle',
                         value=False,
                         label=['Celsius', 'Fahrenheit'],
                         labelPosition='bottom',
                         color = '#0C6E87',
                         style={
-                            "margin": "5%"
+                            "margin": "0.5%"
                         }
                         )
                     ]))       
@@ -212,7 +215,7 @@ cardFanControlTab= dbc.Card([
                 } 
                 ),
         daq.ToggleSwitch(
-                size=100,
+                size=50,
                 id='fan-toggle',
                 value=False,
                 label='Fan Status',
@@ -227,7 +230,7 @@ cardFanControlTab= dbc.Card([
 ], color="dark", outline=True);
 
 content = html.Div([
-            html.H1(children='DashBoard', style={'text-align': 'center', 'margin': '2%'}),
+            html.H1(children='DashBoard', style={'text-align': 'center', 'margin': '0.5%'}),
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Div([
@@ -249,19 +252,34 @@ app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
 
 
 @app.callback(Output('led-image', 'children'),
+              Output('notofication', 'is_open'),
+              Output('light_intensity', 'children'),
               Input('mqtt', 'n_intervals')
                 )
 def update_output(n):
+    global lastSentTime 
+    global isSendEligible
     sensorValue = float(message)
 
     if sensorValue <= 400.0:
         GPIO.output(_ledPin, GPIO.HIGH)
-        img = html.Img(src=app.get_asset_url('lightOnp'), width='100px', height='100px')
+        img = html.Img(src=app.get_asset_url('lightOffp'), width='100px', height='100px')
+        date = datetime.now()
+#        if isSendEligible:
+        subject="LED Warning!"
+        body=f"The Light is ON at {date}"
+        email.send_mail(subject, body)
+        lastSentTime = date
+        isSendEligible = True
+        show =  True
         return img
     else:
         GPIO.output(_ledPin, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
-        return img
+        img = html.Img(src=app.get_asset_url('lightOnp'),width='100px', height='100px')
+        show = False
+        isSendEligible = False
+        return img, show, message
+        
     
 @app.callback(Output('fan-toggle', 'value'),
               Input('fan-toggle', 'value')
@@ -341,7 +359,7 @@ def update_light_intensity(n):
 
 def run():
     print("attempting to connect")
-   # client = connect_mqtt()
+    client = connect_mqtt()
     print("attempting to subscribe")
     subscribe(client)
     client.loop_start()
