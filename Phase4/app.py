@@ -15,6 +15,8 @@ from datetime import datetime
 import pytz
 import sqlite3
 from sqlite3 import Error
+import CRUD as db
+temp, light = 0
 
 lastSentTime = datetime.now()
 lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
@@ -27,6 +29,7 @@ topic = "IoTlab/light"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 message ="0"
+tag_num = "nothing"
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -261,7 +264,7 @@ def update_output(n):
     global isSendEligible
     sensorValue = float(message)
 
-    if sensorValue <= 400.0:
+    if sensorValue <= db.getLight(tag_num):
         GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOffp'), width='100px', height='100px')
         date = datetime.now()
@@ -307,6 +310,20 @@ def update_sensor(n, tValue):
         
    # humidityValue = dht.humidity
     humidityValue = 55
+    
+    if temperatureValue > db.getTemp(tag_num) and EMAIL_SEND == False:
+        subject = "Temperature too High"
+        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
+        email.send_mail(subject, body)
+        EMAIL_SEND = True
+    else:
+        email_id = email.get_mail_ids(1)
+        reply = email.read_mail_body(email_id[0])
+        reply = reply.lower()
+        # todo: read mail timestamp to prevent re-using old "yes" replies
+        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
+        if (reply.__contains__("yes")):
+            startMotor()
 
     # for toggle switch: C to F
     if tValue:
@@ -347,9 +364,14 @@ def subscribe(client: mqtt_client):
         global message 
         message = msg.payload.decode()
         #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+    def on_message2(client, userdata, msg):
+        global tag_num
+        tag_num = msg.payload.decode()
 
-    client.subscribe(topic)
+    client.subscribe("IoTlab/light")
     client.on_message = on_message
+    client.subscribe("IoTlab/rfid")
+    client.on_message = on_message2
 
 
 @app.callback(Output('light-intensity-value', 'value'),

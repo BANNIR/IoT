@@ -294,7 +294,7 @@ def toggle_fan(value):
 #     temperatureValue = dht.temperature
 #     humidityValue = dht.humidity
 #     #checking for the temp and sending an email / turning on a motor
-#     if temperatureValue > 20 and EMAIL_SEND == False:
+#     if temperatureValue > db.getTemp(tag_num) and EMAIL_SEND == False:
 #         subject = "Temperature too High"
 #         body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
 #         email.send_mail(subject, body)
