@@ -392,6 +392,10 @@ def subscribe(client: mqtt_client):
 
 
 @app.callback(Output('light-intensity-value', 'value'),
+              Output('username', 'value'),
+              Output('tempThreshold', 'value'),
+              Output('humidityThreshold', 'value'),
+              Output('lightIntensity', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
     return 'The current light intensity is:' + str(current_light_intensity)
