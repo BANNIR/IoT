@@ -10,13 +10,17 @@ import mail_client as email
 from datetime import datetime
 import random
 from paho.mqtt import client as mqtt_client
+import paho.mqtt.publish as publish
 import random
 from datetime import datetime
 import pytz
 import sqlite3
 from sqlite3 import Error
 import CRUD as db
-temp, light = 0
+
+temp = 0
+light = 0
+humidity = 0
 
 lastSentTime = datetime.now()
 lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
@@ -24,12 +28,12 @@ isSendEligible = True
 
 broker = '192.168.0.119'
 port = 1883
-topic = "IoTlab/light"
+#topic = "IoTlab/light"
 # generate client ID with pub prefix randomly
-client_id = f'python-mqtt-{random.randint(0, 100)}'
+client_id = f"python-mqtt-{random.randint(0, 100)}"
 
 message ="0"
-tag_num = "nothing"
+tag_num = "CCC79463"
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -61,7 +65,7 @@ GPIO.setup(intensityPin, GPIO.OUT)
 
 
 global current_light_intensity
-currentLightIntensity = "NaN"
+currentLightIntensity = 0
 global lightIntensity
 
 app = Dash(__name__)
@@ -89,27 +93,27 @@ offcanvas = html.Div(
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Name: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="username", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(placeholder="username", size="md", className="mb-3", readonly=True, id="user", value=tag_num))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal Temperature: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_temp", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_temp", size="md", className="mb-3", readonly=True, id="temp", value=0))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal Humidity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_humidity", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_humidity", size="md", className="mb-3", readonly=True, id="humid", value=0))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal light intensity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True, id="light", value=0))),
                 ]),
                 dbc.Row(
                 [   
                     dbc.Col(html.Div(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'})),
-                ])
+                ]), dcc.Interval(id='mqtt2', interval = 1 * 1500, n_intervals=0)
             ]),
             id="offcanvas-backdrop",
             title="User Information",
@@ -253,10 +257,31 @@ content = html.Div([
 
 app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
 
+@app.callback(Output('light', 'value'),
+              Output('humid', 'value'),
+              Output('temp', 'value'),
+              Output('user', 'value'),
+              Input('mqtt2', 'n_intervals')
+                )
+def update_output(n):
+    global temp, light, humidity
+    prevtag = tag_num
+
+    temp = db.getTemp(tag_num)
+
+    # light
+    light = db.getLight(tag_num)
+
+    #global humidity
+    humidity = db.getHumidity(tag_num)
+    print(tag_num)
+    
+    return light, humidity, temp, tag_num
+    #remove the rest of the database stuff
 
 @app.callback(Output('led-image', 'children'),
-              Output('notofication', 'is_open'),
-              Output('light_intensity', 'children'),
+              #Output('notofication', 'is_open'), cpmment back in
+              #Output('light-intensity-value', 'children'),  #light_intensity comment back in
               Input('mqtt', 'n_intervals')
                 )
 def update_output(n):
@@ -264,14 +289,14 @@ def update_output(n):
     global isSendEligible
     sensorValue = float(message)
 
-    if sensorValue <= db.getLight(tag_num):
+    if sensorValue <= light:
         GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOffp'), width='100px', height='100px')
         date = datetime.now()
 #        if isSendEligible:
         subject="LED Warning!"
         body=f"The Light is ON at {date}"
-        email.send_mail(subject, body)
+        #email.send_mail(subject, body)
         lastSentTime = date
         isSendEligible = True
         show =  True
@@ -311,19 +336,19 @@ def update_sensor(n, tValue):
    # humidityValue = dht.humidity
     humidityValue = 55
     
-    if temperatureValue > db.getTemp(tag_num) and EMAIL_SEND == False:
-        subject = "Temperature too High"
-        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
-        email.send_mail(subject, body)
-        EMAIL_SEND = True
-    else:
-        email_id = email.get_mail_ids(1)
-        reply = email.read_mail_body(email_id[0])
-        reply = reply.lower()
-        # todo: read mail timestamp to prevent re-using old "yes" replies
-        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-        if (reply.__contains__("yes")):
-            startMotor()
+#    if temperatureValue > temp and EMAIL_SEND == False:
+#        subject = "Temperature too High"
+#        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
+#        email.send_mail(subject, body)
+#        EMAIL_SEND = True
+#    else:
+#        email_id = email.get_mail_ids(1)
+#        reply = email.read_mail_body(email_id[0])
+#        reply = reply.lower()
+#        # todo: read mail timestamp to prevent re-using old "yes" replies
+#        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
+#        if (reply.__contains__("yes")):
+#            startMotor()
 
     # for toggle switch: C to F
     if tValue:
@@ -355,40 +380,52 @@ def connect_mqtt() -> mqtt_client:
     client = mqtt_client.Client(client_id)
     #client.username_pw_set(username, password)
     client.on_connect = on_connect
-   # client.connect(broker, port)
+    client.connect(broker, port)
     return client
 
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        global message 
-        message = msg.payload.decode()
+        print("Hello")
+        #print(msg.payload.decode() + " HEllo ")
+        if hasLetter(msg.payload.decode()):
+            global tag_num
+            tag_num = msg.payload.decode()
+            print("" + msg.payload.decode())
+        else:
+            global message
+            message = msg.payload.decode()
+            print(float(msg.payload.decode()))
         #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-    def on_message2(client, userdata, msg):
-        global tag_num
-        tag_num = msg.payload.decode()
 
-    client.subscribe("IoTlab/light")
+    #client.subscribe("IoTlab/light/intensity")
+    #client.on_message = on_message
+    client.subscribe("IoTlab/rfid/id")
     client.on_message = on_message
-    client.subscribe("IoTlab/rfid")
-    client.on_message = on_message2
 
 
 @app.callback(Output('light-intensity-value', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
-    return 'The current light intensity is:' + str(current_light_intensity)
+    return 'The current light intensity is:' + str(currentLightIntensity)
+
+def hasLetter(s):
+    for char in s:
+        if (char.isalpha()):
+            return True
+    return False
 
 def run():
-    print("attempting to connect")
+    print("connecting")
     client = connect_mqtt()
-    print("attempting to subscribe")
+    print("subscribing")
     subscribe(client)
+    print("looping")
     client.loop_start()
 
 
 if __name__ == "__main__":
-   # run()
+    run()
     app.run_server(debug=True, host='localhost', port=8070)
     
 
