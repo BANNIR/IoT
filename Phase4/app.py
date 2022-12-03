@@ -393,23 +393,30 @@ def connect_mqtt() -> mqtt_client:
     return client
 
 
+#needs testing but this should make listening for specific messages more elegant
 def subscribe(client: mqtt_client):
+    def on_light(client, userdata, msg):
+        print("Got light message (value: " + str(msg.payload) + ")")
+        global message
+        message = msg.payload.decode()
+        print(float(msg.payload.decode()))
+    
+    def on_rfid(client, userdata, msg):
+        print("Got RFID message (value: " + str(msg.payload) + ")")
+        global tag_num
+        tag_num = msg.payload.decode()
+        print("" + msg.payload.decode())
+        email.send_mail("User Login", "User with tag " + tag_num + " has logged in.")
+    
     def on_message(client, userdata, msg):
-        print("Hello")
-        #print(msg.payload.decode() + " HEllo ")
-        if hasLetter(msg.payload.decode()):
-            global tag_num
-            tag_num = msg.payload.decode()
-            print("" + msg.payload.decode())
-        else:
-            global message
-            message = msg.payload.decode()
-            print(float(msg.payload.decode()))
-        #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+        print("FALLBACK CALL | Received: Topic: %s Body: %s. No handler exists for this topic!", msg.topic, msg.payload)
 
-    #client.subscribe("IoTlab/light/intensity")
-    #client.on_message = on_message
+    client.subscribe("IoTlab/light/intensity")
+    client.message_callback_add("IoTlab/light/intensity", on_light)
+
     client.subscribe("IoTlab/rfid/id")
+    client.message_callback_add("IoTlab/rfid/id", on_rfid)
+
     client.on_message = on_message
 
 
