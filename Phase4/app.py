@@ -22,7 +22,7 @@ temp = 0
 light = 0
 humidity = 0
 
-lastSentTime = datetime.now()
+lastSentTime = int(time.time())
 lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
 isSendEligible = True
 
@@ -293,19 +293,22 @@ def update_output(n):
         GPIO.output(_ledPin, GPIO.HIGH)
         img = html.Img(src=app.get_asset_url('lightOffp'), width='100px', height='100px')
         date = datetime.now()
-#        if isSendEligible:
-        subject="LED Warning!"
-        body=f"The Light is ON at {date}"
-        #email.send_mail(subject, body)
-        lastSentTime = date
-        isSendEligible = True
+        if isSendEligible:
+            subject="LED Warning!"
+            body=f"The Light is ON at {date}"
+            email.send_mail(subject, body)
+            lastSentTime = int(time.time())
+            isSendEligible = False
         show =  True
         return img
     else:
         GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOnp'),width='100px', height='100px')
         show = False
-        isSendEligible = False
+        # don't send another light email for 5 minutes
+        # hardcoded for now, make an option later?
+        if int(time.time()) > lastSentTime + 60*5:
+            isSendEligible = True
         return img, show, message
         
     
@@ -336,26 +339,32 @@ def update_sensor(n, tValue):
    # humidityValue = dht.humidity
     humidityValue = 55
     
-#    if temperatureValue > temp and EMAIL_SEND == False:
-#        subject = "Temperature too High"
-#        body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
-#        email.send_mail(subject, body)
-#        EMAIL_SEND = True
-#    else:
-#        email_id = email.get_mail_ids(1)
-#        reply = email.read_mail_body(email_id[0])
-#        reply = reply.lower()
-#        # todo: read mail timestamp to prevent re-using old "yes" replies
-#        # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-#        if (reply.__contains__("yes")):
-#            startMotor()
+    if temperatureValue > temp and EMAIL_SEND == False:
+       EMAIL_SEND = True
+       subject = "Temperature too High"
+       body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
+       email.send_mail(subject, body)
+    else:
+       email_id = email.get_mail_ids(1)
+       reply = email.read_mail_body(email_id[0])
+       reply = reply.lower()
+       # todo: read mail timestamp to prevent re-using old "yes" replies
+       if (reply.__contains__("yes")):
+           startMotor()
+           EMAIL_SEND = False
+
+    # to consider: put a lower bound to start warning about temperature changes again
+    # if temperatureValue < (temp - 5):
+    #     EMAIL_SEND = False
 
     # for toggle switch: C to F
+    # THIS CONFLICTS WITH THE EMAIL CHECK, USE A SEPARATE VAUE FOR DISPLAY ONLY
     if tValue:
         tempUnit = 'Fahrenheit'
         temperatureValue = temperatureValue * (9/5) + 32
     elif not tValue:
         tempUnit = 'Celsius'
+    
 
     return humidityValue, temperatureValue, tempUnit
 
