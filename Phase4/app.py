@@ -26,7 +26,7 @@ lastSentTime = int(time.time())
 lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
 isSendEligible = True
 
-broker = '192.168.0.119'
+broker = '10.0.0.242'
 port = 1883
 #topic = "IoTlab/light"
 # generate client ID with pub prefix randomly
@@ -34,6 +34,7 @@ client_id = f"python-mqtt-{random.randint(0, 100)}"
 
 message ="0"
 tag_num = "CCC79463"
+prevTag = ""
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -148,7 +149,7 @@ cardLighIntensity = dbc.Card([
     dbc.CardHeader([
         html.H2("Light Intensity", className="card-title, text-center")
     ]),
-    dbc.CardBody([
+    dbc.CardBody( [
         html.H5("Current Light Intensity", className="card-title"),
         html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
                 dbc.Input(
@@ -164,7 +165,8 @@ cardLighIntensity = dbc.Card([
                         # 'margin-left': '5%',
                         'width' : '100%',
                     }
-                )
+                ),
+        dcc.Interval(id='mqtt3', interval = 1 * 1000, n_intervals=0)
     ]), 
 ],color="dark", outline=True);
 
@@ -265,7 +267,6 @@ app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
                 )
 def update_output(n):
     global temp, light, humidity
-    prevtag = tag_num
 
     temp = db.getTemp(tag_num)
 
@@ -275,19 +276,22 @@ def update_output(n):
     #global humidity
     humidity = db.getHumidity(tag_num)
     print(tag_num)
+
+    prevTag = tag_num
     
     return light, humidity, temp, tag_num
     #remove the rest of the database stuff
 
 @app.callback(Output('led-image', 'children'),
               #Output('notofication', 'is_open'), cpmment back in
-              #Output('light-intensity-value', 'children'),  #light_intensity comment back in
-              Input('mqtt', 'n_intervals')
+              Output('light-intensity-value', 'value'),  #light_intensity comment back in
+              Input('mqtt3', 'n_intervals')
                 )
 def update_output(n):
     global lastSentTime 
     global isSendEligible
     sensorValue = float(message)
+    # s = "The light intensity it: " + str(sensorValue)
 
     if sensorValue <= light:
         GPIO.output(_ledPin, GPIO.HIGH)
@@ -300,7 +304,7 @@ def update_output(n):
             lastSentTime = int(time.time())
             isSendEligible = False
         show =  True
-        return img
+        return img, sensorValue
     else:
         GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOnp'),width='100px', height='100px')
@@ -309,7 +313,7 @@ def update_output(n):
         # hardcoded for now, make an option later?
         if int(time.time()) > lastSentTime + 60*5:
             isSendEligible = True
-        return img, show, message
+        return img, sensorValue
         
     
 @app.callback(Output('fan-toggle', 'value'),
@@ -419,11 +423,6 @@ def subscribe(client: mqtt_client):
 
     client.on_message = on_message
 
-
-@app.callback(Output('light-intensity-value', 'value'),
-              Input('interval-component', 'n_intervals'))
-def update_light_intensity(n):
-    return 'The current light intensity is:' + str(currentLightIntensity)
 
 def hasLetter(s):
     for char in s:
