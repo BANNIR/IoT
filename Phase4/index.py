@@ -150,13 +150,13 @@ cardLedBox = dbc.Card([
                     id="notification",
                     header="LED WARNING",
                     is_open=False,
-                    dismissable=True,
+                    dismissable=False,
+                    duration=4000,
                     icon="danger",
                     # top: 66 positions the toast below the navbar
                     style={"position": "fixed", "top": 75, "right": 10, "width": 350},
                 ),
                 dcc.Interval(id='mqtt', interval = 1 * 1500, n_intervals=0),
-                html.P(children='Click the image to turn on the LED'),
             ]),
     ]),
 ], color="white", outline=True);
@@ -233,6 +233,19 @@ cardFanControlTab= dbc.Card([
         html.H2("Fan", className="card-title, text-center")
     ]),
     dbc.CardBody([
+        # dbc.Input(
+        #             id='fan-warning',
+        #             className="mb-2",
+        #             value="The fan is OFF",
+        #             readonly = True,
+        #             style = {
+        #                 'text-align': 'center',
+        #                  # 'margin-top': '2%',
+        #                 # 'margin-right': '5%',
+        #                 # 'margin-left': '5%',
+        #                 'width' : '100%',
+        #             }
+        #         ),
         html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
                 style={
                     "margin": "5%"
@@ -250,7 +263,7 @@ cardFanControlTab= dbc.Card([
                 }
                 )
     ]), 
-    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
+    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
 ], color="white", outline=True);
 
 content = html.Div([
@@ -329,7 +342,7 @@ def update_output(n):
         show = False
         # don't send another light email for 5 minutes
         # hardcoded for now, make an option later?
-        if int(time.time()) > lastSentTime + 60*5:
+        if int(time.time()) > lastSentTime + 60*2:
             isSendEligible = True
         return img, show, "The light intensity is " + str(sensorValue)
         
@@ -368,19 +381,17 @@ def update_sensor(n, tValue):
         body = "The current temperature is " + str(temperatureValue) + ". Would you like to turn on the fan?"
         email.send_mail(subject, body)
         EMAIL_SEND = True
+        #fan = "The fan is OFF"
     else:
         email_id = email.get_mail_ids(1)
         reply = email.read_mail_body(email_id[0])
         reply = reply.lower()
         # todo: read mail timestamp to prevent re-using old "yes" replies
         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-        if (reply.__contains__("yes") and EMAIL_SEND):
+        if (reply.__contains__("yes") and EMAIL_SEND == True):
             startMotor()
+            #fan = "The fan is ON"
             EMAIL_SEND = False
-
-    # to consider: put a lower bound to start warning about temperature changes again
-    # if temperatureValue < (temp - 5):
-    #     EMAIL_SEND = False
 
     # for toggle switch: C to F
     if tValue:
