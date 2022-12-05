@@ -59,7 +59,7 @@ def startMotor():
     GPIO.output(Motor1,GPIO.HIGH)
     GPIO.output(Motor2,GPIO.LOW)
     GPIO.output(Motor3,GPIO.HIGH)
-    time.sleep(10)
+    time.sleep(5)
     GPIO.output(Motor1, GPIO.LOW)
 
 #Phase3 pin
@@ -73,6 +73,11 @@ global lightIntensity
 
 app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
+fanImg = html.Img(src=app.get_asset_url('fan1.png'),width='35%', height='35%', 
+                style={
+                    "margin": "5%"
+                } 
+                )
 humidityValue = 0
 temperatureValue = 0
 tempUnit = 'Celsius'
@@ -231,11 +236,7 @@ FanControlTab= dbc.Card([
         html.H2("Fan")
     ],style= {'background': 'none' ,'border': 'none'}),
     dbc.CardBody([
-        html.Img(src=app.get_asset_url('fan1.png'),width='35%', height='35%', 
-                style={
-                    "margin": "5%"
-                } 
-                ),
+        html.Div(fanImg, id="fan_image"),
         daq.ToggleSwitch(
                 size = 50,
                 id='fanToggle',
@@ -332,28 +333,37 @@ def update_output(n):
         return img, show, "The light intensity is " + str(sensorValue)
         
     
-@app.callback(Output('fanToggle', 'value'),
-              Input('fanToggle', 'value')
-)
-def toggle_fan(value):
-    if value:
-        GPIO.output(Motor1, GPIO.HIGH)
-        value = True
-    else:
-         GPIO.output(Motor1, GPIO.LOW)
-         value = False
-    return value
+# @app.callback(Output('fanToggle', 'value'),
+#               Input('fanToggle', 'value')
+# )
+# def toggle_fan(value):
+#     if value:
+#         GPIO.output(Motor1, GPIO.HIGH)
+#         value = True
+#     else:
+#          GPIO.output(Motor1, GPIO.LOW)
+#          value = False
+#     return value
 
 
 @app.callback(Output('humidity-gauge', 'value'),
               Output('temperature-thermometer', 'value'),
               Output('temperature-thermometer', 'units'),
+              Output('fan_image', 'children'),
+              Output('fanToggle', 'value'),
+              Input('fanToggle', 'value'),
               Input('interval-component', 'n_intervals'),
               Input('temp-toggle', 'value'))
-def update_sensor(n, temperatureValue):
+def update_sensor(Value, n, tValue):
     global emailSent
     global emailReceived
     global EMAIL_SEND
+    global fanImg
+    fanImg = html.Img(src=app.get_asset_url('fan1.png'),width='35%', height='35%', 
+                style={
+                    "margin": "5%"
+                })
+    value=False
     temperatureValue = dht.temperature
     #temperatureValue = 20
         
@@ -374,19 +384,36 @@ def update_sensor(n, temperatureValue):
         # todo: read mail timestamp to prevent re-using old "yes" replies
         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
         if (reply.__contains__("yes") and EMAIL_SEND == True):
+            
             startMotor()
             #fan = "The fan is ON"
             EMAIL_SEND = False
+            fanImg = html.Img(src=app.get_asset_url('fanOn'),width='35%', height='35%', 
+                style={
+                    "margin": "5%"
+                })
+
+    # for toggle fan
+    if Value:
+        GPIO.output(Motor1, GPIO.HIGH)
+        fanImg = html.Img(src=app.get_asset_url('fanOn'),width='35%', height='35%', 
+                style={
+                    "margin": "5%"
+                })
+        value = True
+    elif not Value:
+         GPIO.output(Motor1, GPIO.LOW)
+
 
     # for toggle switch: C to F
-    if temperatureValue:
+    if tValue:
         tempUnit = 'Fahrenheit'
         temperatureValue = temperatureValue * (9/5) + 32
-    elif not temperatureValue:
+    elif not tValue:
         tempUnit = 'Celsius'
     
 
-    return humidityValue, temperatureValue, tempUnit
+    return humidityValue, temperatureValue, tempUnit, fanImg, value
 
 
 @app.callback(
