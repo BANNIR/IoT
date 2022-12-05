@@ -34,6 +34,7 @@ client_id = f"python-mqtt-{random.randint(0, 100)}"
 
 message ="0"
 tag_num = "CCC79463"
+prevTag = ""
 
 GPIO.setmode(GPIO.BCM) # BCM
 GPIO.setwarnings(False)
@@ -179,7 +180,7 @@ cardLightIntensity = dbc.Card([
                         # 'margin-left': '5%',
                         'width' : '100%',
                     }
-                )
+                ),  dcc.Interval(id='mqtt3', interval = 1 * 1000, n_intervals=0)
             ]))
     ]),
 ],color="dark", outline=True);
@@ -279,7 +280,6 @@ app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
                 )
 def update_output(n):
     global temp, light, humidity
-    prevtag = tag_num
 
     temp = db.getTemp(tag_num)
 
@@ -290,13 +290,15 @@ def update_output(n):
     humidity = db.getHumidity(tag_num)
     print(tag_num)
     
+    prevTag = tag_num
+    
     return light, humidity, temp, tag_num
     #remove the rest of the database stuff
 
 @app.callback(Output('led-image', 'children'),
               Output('notification', 'is_open'),
               Output('light_intensity', 'children'),
-              Input('mqtt', 'n_intervals')
+              Input('mqtt3', 'n_intervals')
                 )
 def update_output(n):
     global lastSentTime 
@@ -316,7 +318,7 @@ def update_output(n):
             lastSentTime = int(time.time())
             isSendEligible = False
         show =  True
-        return img
+        return img, sensorValue
     else:
         GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
@@ -325,7 +327,8 @@ def update_output(n):
         # hardcoded for now, make an option later?
         if int(time.time()) > lastSentTime + 60*5:
             isSendEligible = True
-    return img, show, message
+        return img, sensorValue
+        
     
 @app.callback(Output('fan-toggle', 'value'),
               Input('fan-toggle', 'value')
