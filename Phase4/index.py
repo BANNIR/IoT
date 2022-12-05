@@ -83,13 +83,13 @@ theme_change = ThemeChangerAIO(aio_id="theme");
 offcanvas = html.Div(
     [
         dbc.Button(
-              "Profile", id="open-offcanvas-backdrop",style={'padding': '10%', 'border': 'none', 'background': 'none'}
+              "Profile", id="open-offcanvas-backdrop",style={'padding': '12%', 'border': 'none', 'background': ''}
         ),
         dbc.Offcanvas(
             html.Div(
             [                       
                 html.Div(style={'text-align': 'center'},children=[
-                      html.Img(src=app.get_asset_url('avatar.png'), width='50%', height='50%', style={'border-radius': '50%'})
+                      html.Img(src=app.get_asset_url('avatar1.png'), width='45%', height='45%', style={'border-radius': '100%'})
             ]),
                 dbc.Row(
                 [
@@ -140,7 +140,7 @@ cardLedBox = dbc.Card([
     ]),
     dbc.CardBody([
         html.Div(children=[
-                html.H1(children='LED'),
+                html.H1(children=''),
                 html.P("Light Intensity: ", id="light_intensity"),
                 html.Div(img, id='led-image', n_clicks = 0),
                 dbc.Toast(
@@ -157,7 +157,7 @@ cardLedBox = dbc.Card([
                 html.P(children='Click the image to turn on the LED'),
             ]),
     ]),
-], color="dark", outline=True);
+], color="white", outline=True);
 
 cardLightIntensity = dbc.Card([ 
     dbc.CardHeader([
@@ -183,7 +183,7 @@ cardLightIntensity = dbc.Card([
                 ),  dcc.Interval(id='mqtt3', interval = 1 * 1000, n_intervals=0)
             ]))
     ]),
-],color="dark", outline=True);
+],color="white", outline=True);
 
 cardHumidTemp = dbc.Card([
     dbc.CardHeader([
@@ -224,7 +224,7 @@ cardHumidTemp = dbc.Card([
                         )
                     ])) 
      ]) 
- ],color="dark", outline=True );
+ ],color="white", outline=True );
 
 cardFanControlTab= dbc.Card([
     dbc.CardHeader([
@@ -249,7 +249,7 @@ cardFanControlTab= dbc.Card([
                 )
     ]), 
     dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
-], color="dark", outline=True);
+], color="white", outline=True);
 
 content = html.Div([
             html.H1(children='DashBoard', style={'text-align': 'center', 'margin': '0.5%'}),
@@ -443,10 +443,10 @@ def subscribe(client: mqtt_client):
 
 
 @app.callback(Output('light-intensity-value', 'value'),
-              Output('username', 'value'),
-              Output('tempThreshold', 'value'),
-              Output('humidityThreshold', 'value'),
-              Output('lightIntensity', 'value'),
+            #   Output('username', 'value'),
+            #   Output('tempThreshold', 'value'),
+            #   Output('humidityThreshold', 'value'),
+            #   Output('lightIntensity', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
     return 'The current light intensity is:' + str(currentLightIntensity)
