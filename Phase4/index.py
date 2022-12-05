@@ -21,6 +21,8 @@ import CRUD as db
 temp = 0
 light = 0
 humidity = 0
+show = False
+
 
 lastSentTime = int(time.time())
 lastReadTime = email.read_mail_timestamp(email.get_mail_ids(1)[0])
@@ -248,7 +250,7 @@ cardFanControlTab= dbc.Card([
                 }
                 )
     ]), 
-    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
+    dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
 ], color="white", outline=True);
 
 content = html.Div([
@@ -297,12 +299,13 @@ def update_output(n):
 
 @app.callback(Output('led-image', 'children'),
               Output('notification', 'is_open'),
-              Output('light_intensity', 'children'),
+              Output('light-intensity-value', 'value'),
               Input('mqtt3', 'n_intervals')
                 )
 def update_output(n):
     global lastSentTime 
     global isSendEligible
+    global show
 
     sensorValue = float(message)
 
@@ -317,8 +320,9 @@ def update_output(n):
             email.send_mail(subject, body)
             lastSentTime = int(time.time())
             isSendEligible = False
-        show =  True
-        return img, sensorValue
+            show =  True
+        
+        return img, show, "The light intensity is " + str(sensorValue)
     else:
         GPIO.output(_ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightOffp'),width='100px', height='100px')
@@ -327,7 +331,7 @@ def update_output(n):
         # hardcoded for now, make an option later?
         if int(time.time()) > lastSentTime + 60*5:
             isSendEligible = True
-        return img, sensorValue
+        return img, show, "The light intensity is " + str(sensorValue)
         
     
 @app.callback(Output('fan-toggle', 'value'),
@@ -351,12 +355,12 @@ def toggle_fan(value):
 def update_sensor(n, tValue):
     global emailSent
     global emailReceived
-    # dht.readDHT11()
-    # temperatureValue = dht.temperature
-    temperatureValue = 20
+    global EMAIL_SEND
+    temperatureValue = dht.temperature
+    #temperatureValue = 20
         
-   # humidityValue = dht.humidity
-    humidityValue = 55
+    humidityValue = dht.humidity
+    #humidityValue = 55
     
     if temperatureValue > temp and EMAIL_SEND == False:
         EMAIL_SEND = True
@@ -370,7 +374,7 @@ def update_sensor(n, tValue):
         reply = reply.lower()
         # todo: read mail timestamp to prevent re-using old "yes" replies
         # some_timestamp_record = email.read_mail_timestamp(email_id[0])
-        if (reply.__contains__("yes")):
+        if (reply.__contains__("yes") and EMAIL_SEND):
             startMotor()
             EMAIL_SEND = False
 
@@ -440,16 +444,6 @@ def subscribe(client: mqtt_client):
     client.message_callback_add("IoTlab/rfid/id", on_rfid)
 
     client.on_message = on_message
-
-
-@app.callback(Output('light-intensity-value', 'value'),
-            #   Output('username', 'value'),
-            #   Output('tempThreshold', 'value'),
-            #   Output('humidityThreshold', 'value'),
-            #   Output('lightIntensity', 'value'),
-              Input('interval-component', 'n_intervals'))
-def update_light_intensity(n):
-    return 'The current light intensity is:' + str(currentLightIntensity)
 
 def hasLetter(s):
     for char in s:
