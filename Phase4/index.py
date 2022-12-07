@@ -80,18 +80,17 @@ emailSent = False
 emailReceived = 0
 
 
-theme_change = ThemeChangerAIO(aio_id="theme");
+changethemes = ThemeChangerAIO(aio_id="theme");
 
 offcanvas = html.Div(
     [
         dbc.Button(
-              "Profile", id="open-offcanvas-backdrop",style={'padding': '12%', 'border': 'none', 'background': ''}
+                "Profile", id="opensidebar",style={'padding': '12%', 'border': 'none', 'background': 'none'}
         ),
         dbc.Offcanvas(
             html.Div(
             [                       
                 html.Div(style={'text-align': 'center'},children=[
-                      html.Img(src=app.get_asset_url('avatar1.png'), width='45%', height='45%', style={'border-radius': '100%'})
             ]),
                 dbc.Row(
                 [
@@ -100,51 +99,51 @@ offcanvas = html.Div(
                 ]),
                 dbc.Row(
                 [
-                    dbc.Col(html.Div("Ideal Temperature: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_temp", size="md", className="mb-3", readonly=True, id="temp", value=0))),
+                    dbc.Col(html.Div("Temperature: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="wanted temperature", size="md", className="mb-3", readonly=True, id="temp", value=0))),
                 ]),
                 dbc.Row(
                 [
-                    dbc.Col(html.Div("Ideal Humidity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_humidity", size="md", className="mb-3", readonly=True, id="humid", value=0))),
+                    dbc.Col(html.Div("Humidity: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="wanted humidity", size="md", className="mb-3", readonly=True, id="humid", value=0))),
                 ]),
                 dbc.Row(
                 [
-                    dbc.Col(html.Div("Ideal light intensity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True, id="light", value=0))),
+                    dbc.Col(html.Div("Light intensity: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="wanted intensity", size="md", className="mb-3", readonly=True, id="light", value=0))),
                 ]),
                 dbc.Row(
                 [   
-                    dbc.Col(html.Div(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'})),
+                    
                 ]), dcc.Interval(id='mqtt2', interval = 1 * 1500, n_intervals=0)
             ]),
             id="offcanvas-backdrop",
-            title="User Information",
+            title="Settings",
             is_open=False,
         ),
     ]
 )
 
-navbar = dbc.NavbarSimple(
+navigation = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink(offcanvas), style={'text-align': 'end'})
+        dbc.Col(html.Div(changethemes, style={ 'color': 'white','padding-bottom': '15%', 'border': 'none', 'background': 'hidden'})),
+        dbc.NavItem(dbc.NavLink(offcanvas), style={'text-align': 'center', 'padding-right':'25%'})
     ],
-    brand="SMARTHOME",
-    brand_href="#",
-    color="dark",
+    brand="DashBoard",
+    color="transparent",
     dark=True,
     sticky='top'
 )
 
-cardLedBox = dbc.Card([
+LedBox = dbc.Card([
     dbc.CardHeader([
-         html.H2(children="LED", className="card-title, text-center")
-    ]),
+         html.H2(children="LED")
+    ], style= {'background': 'none' ,'border': 'none'}),
     dbc.CardBody([
         html.Div(children=[
                 html.H1(children=''),
-                html.P("Light Intensity: ", id="light_intensity"),
-                html.Div(img, id='led-image', n_clicks = 0),
+                html.P("Light ", id="light_intensity"),
+                html.Div(img, id='led-image', n_clicks = 0, style= {'padding-top': '', 'padding-bottom': '22.3%'}),
                 dbc.Toast(
                     "An email has been sent!",
                     id="notification",
@@ -161,14 +160,14 @@ cardLedBox = dbc.Card([
     ]),
 ], color="white", outline=True);
 
-cardLightIntensity = dbc.Card([ 
+LightIntensity = dbc.Card([ 
     dbc.CardHeader([
-       html.H2("Light Intensity", className="card-title, text-center")
-    ]),
+       html.H2("Light Intensity")
+    ], style = {'background': 'none' ,'border': 'none'}),
     dbc.CardBody([
-        html.H5("Current Light Intensity", className="card-title"),
+        html.H5("", className="card-title"),
         dbc.Col(html.Div(children=[
-                html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
+                html.Img(src=app.get_asset_url('light_intensity1.png'),width='30%', height='30%', style= {'padding-bottom': '5.2%'}),
                 dbc.Input(
                     size="lg",
                     id='light-intensity-value',
@@ -177,24 +176,23 @@ cardLightIntensity = dbc.Card([
                     readonly = True,
                     style = {
                         'text-align': 'center',
-                         # 'margin-top': '2%',
-                        # 'margin-right': '5%',
-                        # 'margin-left': '5%',
                         'width' : '100%',
+                        'background': 'none',
+                        'border': 'hidden'
                     }
                 ),  dcc.Interval(id='mqtt3', interval = 1 * 1000, n_intervals=0)
             ]))
     ]),
 ],color="white", outline=True);
 
-cardHumidTemp = dbc.Card([
+HumidTemp = dbc.Card([
     dbc.CardHeader([
-        html.H2("Humidity and Temperature", className="card-title, text-center")
-    ]),
+        html.H2("Humidity and Temperature")
+    ], style= {'background': 'none' ,'border': 'none'}),
     dbc.CardBody([
                     dbc.Col(html.Div(id='humidity', children=[
                         daq.Gauge(
-                        color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
+                        color={"gradient":True,"ranges":{"#97D6F0":[0,40],"#0C30A2":[40,70],"#360671":[70,100]}},
                         id='humidity-gauge',
                         label='Current Humidity',
                         showCurrentValue=True,
@@ -204,22 +202,22 @@ cardHumidTemp = dbc.Card([
                         min=0
                         )
                     ])),
-                    dbc.Col(html.Div(id='temperature', children=[
-                        daq.Thermometer(
+                    dbc.Col(html.Div(id='temperature', children = [
+                        daq.Thermometer(   
                         id='temperature-thermometer',
                         label='Current temperature',
                         value=temperatureValue,
-                        showCurrentValue=True,
-                        min=-20,
-                        max=122
+                        showCurrentValue = True,
+                        min = - 20,
+                        max = 100,
                         ),
                         daq.ToggleSwitch(
                         size = 50,
-                        id='temp-toggle',
+                        id ='temp-toggle',
                         value=False,
                         label=['Celsius', 'Fahrenheit'],
                         labelPosition='bottom',
-                        color = '#0C6E87',
+                        color = '#360671',
                         style={
                             "margin": "0.5%"
                         }
@@ -228,37 +226,24 @@ cardHumidTemp = dbc.Card([
      ]) 
  ],color="white", outline=True );
 
-cardFanControlTab= dbc.Card([
+FanControlTab= dbc.Card([
     dbc.CardHeader([
-        html.H2("Fan", className="card-title, text-center")
-    ]),
+        html.H2("Fan")
+    ],style= {'background': 'none' ,'border': 'none'}),
     dbc.CardBody([
-        # dbc.Input(
-        #             id='fan-warning',
-        #             className="mb-2",
-        #             value="The fan is OFF",
-        #             readonly = True,
-        #             style = {
-        #                 'text-align': 'center',
-        #                  # 'margin-top': '2%',
-        #                 # 'margin-right': '5%',
-        #                 # 'margin-left': '5%',
-        #                 'width' : '100%',
-        #             }
-        #         ),
-        html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
+        html.Img(src=app.get_asset_url('fan1.png'),width='35%', height='35%', 
                 style={
                     "margin": "5%"
                 } 
                 ),
         daq.ToggleSwitch(
-                size=50,
-                id='fan-toggle',
+                size = 50,
+                id='fanToggle',
                 value=False,
                 label='Fan Status',
                 labelPosition='bottom',
-                color = '#0C6E87', 
-                style={
+                color = '#360671', 
+                style ={
                     "margin": "2%"
                 }
                 )
@@ -266,26 +251,26 @@ cardFanControlTab= dbc.Card([
     dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
 ], color="white", outline=True);
 
-content = html.Div([
-            html.H1(children='DashBoard', style={'text-align': 'center', 'margin': '0.5%'}),
+holder = html.Div([
+            html.H1(children='', style={'text-align': 'center', 'margin': '0.5%'}),
             dbc.Container([
                 dbc.Row([
+                    dbc.Col(HumidTemp, width = 4,align="start", style={"height": "100%"}), 
                     dbc.Col(html.Div([
                             dbc.Row([
-                                dbc.Col(cardLedBox, width=6, align="start", style={"height": "100%"}),
-                                dbc.Col(cardFanControlTab, width=6 ,align="start", style={"height": "100%"})
+                                dbc.Col(LedBox, width=6, align="start", style={"height": "100%"}),
+                                dbc.Col(FanControlTab, width=6 ,align="start", style={"height": "100%"})
                                 ]),
                             dbc.Row([
-                                dbc.Col(cardLightIntensity, width=12 ,align="start", style={"height": "100%"})
+                                dbc.Col(LightIntensity, width=11.5 , align="start", style={"height": "100%"})
                                 ])
                             ])
-                        ),
-                    dbc.Col(cardHumidTemp, width=5,align="start", style={"height": "100%"})           
-                ])
+                        ),          
+                    ])
             ])   
-        ], className="content");
+        ], className = "holder");
 
-app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
+app.layout = html.Div(id="theme-switch-div", children=[navigation, holder]);
 
 @app.callback(Output('light', 'value'),
               Output('humid', 'value'),
@@ -347,8 +332,8 @@ def update_output(n):
         return img, show, "The light intensity is " + str(sensorValue)
         
     
-@app.callback(Output('fan-toggle', 'value'),
-              Input('fan-toggle', 'value')
+@app.callback(Output('fanToggle', 'value'),
+              Input('fanToggle', 'value')
 )
 def toggle_fan(value):
     if value:
@@ -365,7 +350,7 @@ def toggle_fan(value):
               Output('temperature-thermometer', 'units'),
               Input('interval-component', 'n_intervals'),
               Input('temp-toggle', 'value'))
-def update_sensor(n, tValue):
+def update_sensor(n, temperatureValue):
     global emailSent
     global emailReceived
     global EMAIL_SEND
@@ -394,10 +379,10 @@ def update_sensor(n, tValue):
             EMAIL_SEND = False
 
     # for toggle switch: C to F
-    if tValue:
+    if temperatureValue:
         tempUnit = 'Fahrenheit'
         temperatureValue = temperatureValue * (9/5) + 32
-    elif not tValue:
+    elif not temperatureValue:
         tempUnit = 'Celsius'
     
 
@@ -406,7 +391,7 @@ def update_sensor(n, tValue):
 
 @app.callback(
     Output("offcanvas-backdrop", "is_open"),
-    Input("open-offcanvas-backdrop", "n_clicks"),
+    Input("opensidebar", "n_clicks"),
     State("offcanvas-backdrop", "is_open"))
 def toggle_offcanvas(n1, is_open):
     if n1:
