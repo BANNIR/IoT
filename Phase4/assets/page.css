@@ -1,0 +1,33 @@
+body { 
+    height : 90%;
+    margin: 0 !important; 
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgb(34, 31, 95) 0%, rgb(0, 0, 0) 35%, rgb(11, 109, 129) 100%);
+    overflow: hidden;
+}
+
+.card{
+  text-align: center;
+  margin: 0.5% !important; 
+  height: 100%;
+  width: 100%;
+  border-radius: 0% !important;
+  border-width: 25px !important;
+}
+
+#opensidebar{
+  padding: 30%; 
+  border : none; 
+  background: transparent;
+  border-radius: 50%;
+  height: 30%;
+  width: 30%;
+  text-align: center;
+  background-color: none;
+  color:rgb(255, 255, 255);
+}
+
+button:focus {
+  outline: 0 !important;
+  box-shadow: none !important;
+}
