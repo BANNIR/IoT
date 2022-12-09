@@ -1,0 +1,26 @@
+# IoT Final Project For the 2022 Fall Semester In Vanier
+## Running Guide
+- Download The Code off of this github
+- Go in the phase 4 folder
+- From the ESP Code folder, open the .ino file
+- change the ssid, password, mqtt_server information to connect to your network
+- upload it to the ESP
+- Go to index.php and change the broker to be matching the IP of the mqtt broker
+- Open the terminal
+- Using PIP, download all the necessary dependencies
+  - dash
+  - dash_daq
+  - dash_bootstrap_components
+  - dash_bootstrap_templates
+  - paho.mqtt
+  - google-api-python-client 
+  - google-auth-httplib2 
+  - google-auth-oauthlib
+- Cd into Phase4 folder
+- Run index.py file
+- The first time you run it, it will ask the credentials for the gmail account
+- Enter the credentials and allow access to everything it is asking
+- Go back to the terminal and run the file again
+- Open a browser
+- Go to localhost:8070
+- Do the wiring 
