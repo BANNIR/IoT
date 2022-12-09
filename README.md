@@ -13,6 +13,7 @@
   - dash_bootstrap_components
   - dash_bootstrap_templates
   - paho.mqtt
+  - pytz
   - google-api-python-client 
   - google-auth-httplib2 
   - google-auth-oauthlib
